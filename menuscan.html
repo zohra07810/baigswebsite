@@ -1,0 +1,2135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AR Menu</title>
+<script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+html, body { margin:0; padding:0; width:100%;    min-height: 100vh; overflow:hidden; }
+
+
+#content {
+  position:absolute;
+  bottom:10px; left:50%;
+  transform:translateX(-50%);
+  background:rgba(0,0,0,0.7);
+  color:#fff;
+  padding: 5px 10px;  
+  border-radius:8px;
+  z-index:999;
+  width: auto;             
+  max-width: 95%;  
+  text-align:center;
+  display: flex;
+  flex-direction: column; 
+  align-items: center;
+  transition: width 0.3s ease;
+}
+
+
+
+ #content span {
+    font-size: 14px;
+  }
+
+
+button {
+  margin:6px;
+  padding:12px 18px;
+  cursor:pointer;
+  border:none;
+  border-radius:6px;
+  background:#5a4d35; 
+  color:#fff;
+  font-size:16px;
+  transition: background 0.3s;
+}
+button.active {
+  background: yellow;   
+  color: black;        
+}
+#size-buttons {
+  display: flex;    
+  justify-content: center;
+  margin-top:6px;
+  gap: 8px;           
+}
+#description {
+  margin-top:10px;
+  font-size:15px;
+  color:#ffd;
+  text-align:center;
+  white-space: normal;     
+  white-space: pre-line; 
+  max-width: 600px;    
+}
+
+@media screen and (max-width: 480px) {
+  #content {
+    padding: 6px 8px;
+  }
+
+  #description {
+    font-size: 14px;
+    max-width: 95vw;   
+  }
+}
+
+/* Back button */
+#back-btn {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 10px 16px;
+  font-size: 15px;
+  font-weight: bold;
+  background: black;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  z-index: 1000;
+  transition: background 0.3s, transform 0.2s;
+}
+#back-btn:hover {
+  background: #e9e51f;
+  color: black;
+  transform: scale(1.05);
+}
+
+/* Help Button */
+#helpBtn {
+  background: #e9e51f;
+  border: none;
+  border-radius: 6px;
+  color: black;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+#helpBtn:hover {
+  background: #333;
+  color: rgb(255, 255, 255);
+}
+
+/* Modal Background (Overlay) */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 999999;
+  top: 0;
+  left: 0;
+  width: 100vw; 
+  height: 100vh;            
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;  
+  align-items: center;      
+  padding: 16px;             
+  box-sizing: border-box;
+  pointer-events: all;
+}
+
+/* Modal Container */
+.modal-content {
+  background-color: #fff;
+  border-radius: 14px;
+  width: 90%;               
+  max-width: 380px;         
+  padding: 20px;
+  text-align: center;
+  color: #333;
+  position: relative;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+
+  transform: translateY(1px);
+}
+
+/* Close Button */
+.close {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  font-size: 26px;
+  font-weight: bold;
+  color: #333;
+  cursor: pointer;
+}
+
+.variant-nav {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.variant-arrow {
+  font-size: 26px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+}
+
+.variant-label {
+  font-size: 16px;
+  font-weight: bold;
+  color: #ffd;
+  min-width: 80px;
+  text-align: center;
+}
+
+/* Slides */
+.slide {
+  display: none;
+}
+
+.slide.active {
+  display: block;
+}
+
+.slide img {
+  width: 100%;
+  max-height: 230px;
+  object-fit: contain;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  background: #f5f5f5;
+}
+
+/* Buttons */
+.nav-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+
+.nav-buttons button {
+  background-color: #3a3a3a;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.nav-buttons button:hover {
+  background-color: #e9e51f;
+  color: black;
+}
+
+/* Extra safety for very small screens */
+@media (max-width: 400px) {
+  .modal-content {
+    width: 95%;
+    padding: 16px;
+  }
+  .slide img {
+    max-height: 180px;
+  }
+}
+
+
+#refreshBtn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 10px 16px;
+  font-size: 15px;
+  font-weight: bold;
+  background: #070707;
+  color: rgb(248, 248, 248);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  z-index: 1000;
+  transition: background 0.3s, transform 0.2s;
+}
+#refreshBtn:hover {
+  background: #333;
+  color: white;
+  transform: scale(1.05);
+}
+
+  #progressBar {
+  width: 0%;
+  max-width: 100%;
+  transition: width .2s ease;
+  overflow: hidden;
+}
+
+</style>
+</head>
+<body>
+
+
+<button id="refreshBtn" onclick="refreshScene()">🔄 Refresh Scene</button>
+
+<!-- Add this in your HTML somewhere -->
+<div id="change-view-container" style="position: absolute; top: 90px; right: 10px; z-index: 1000;"></div>
+
+<div id="variant-nav-container" style="position: absolute; bottom: 250px; left: 50%; transform: translateX(-50%); z-index: 1000;"></div>
+
+<div id="content">
+  <div style="display:flex; align-items:center; gap:10px;">
+    <span>Please wait..</span>
+    <button id="helpBtn">Help</button>
+  </div>
+</div>
+
+<!-- Description container -->
+<div id="description-container" style="display:none;">
+  <p id="description"></p>
+</div>
+
+<div id="nutrition-container" style="display:none; text-align:center; margin-top:10px;">
+  <canvas id="nutrition-chart" width="300" height="300"></canvas>
+</div>
+
+
+<!-- Help Modal -->
+<div id="helpModal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2>How to Use the Scanner</h2>
+
+    <!-- Slides -->
+    <div class="slide active">
+      <img src="images/scanfirst.png" alt="Step 1">
+      <p>Step 1: Wait for the loading circle to change into a scanner before you start scanning.</p>
+    </div>
+
+     <div class="slide">
+      <img src="images/callscan.png" alt="Step 2">
+      <p>at the back of the calling card, Scan the Marker Category</p>
+    </div>
+
+    <div class="slide">
+      <img src="images/scan1.jpg" alt="Step 2">
+      <p>Using the physical menu,  Each food category is a marker. Scan a category name and keep your phone steady after scanning.</p>
+    </div>
+
+       <div class="slide">
+      <img src="images/menusize.jpg" alt="Step 3">
+      <p>Step 2: Scan this whole page to see different sizes options.</p>
+    </div>
+
+    <!-- Navigation buttons -->
+    <div class="nav-buttons">
+      <button id="prevBtn">Previous</button>
+      <button id="nextBtn">Next</button>
+    </div>
+  </div>
+</div>
+
+
+<a-scene mindar-image="imageTargetSrc: fulltarget.mind; autoStart: true; filterMinCF: 0.0001; filterBeta: 0.001;"
+         embedded
+         vr-mode-ui="enabled: false"
+         device-orientation-permission-ui="enabled: false"
+         style="width:100vw; height:100vh;">
+
+         
+  <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+  
+  <!-- Marker 0: sizes -->
+<a-entity 
+  id="marker0" mindar-image-target="targetIndex: 0">
+</a-entity>
+
+  <!-- Marker 1: Biryani -->
+ <a-entity 
+  id="marker1" mindar-image-target="targetIndex: 1">
+</a-entity>
+
+
+
+   <!-- Marker 2: broasted -->
+  <a-entity 
+  id="marker2" mindar-image-target="targetIndex: 2">
+
+</a-entity>
+
+  <!-- Marker 3: combo i -->
+  <a-entity 
+  id="marker3" mindar-image-target="targetIndex: 3" >
+</a-entity>
+
+  <!-- Marker 4: Desserts -->
+ <a-entity 
+  id="marker4" mindar-image-target="targetIndex: 4" >
+</a-entity>
+
+  <!-- Marker 5: Drinks -->
+ <a-entity 
+  id="marker5" mindar-image-target="targetIndex: 5" >
+</a-entity>
+
+  <!-- Marker 6: Haleem -->
+  <a-entity 
+  id="marker6" mindar-image-target="targetIndex: 6">
+</a-entity>
+
+  <!-- Marker 7: Hummus -->
+  <a-entity 
+  id="marker7" mindar-image-target="targetIndex: 7" >
+</a-entity>
+
+  <!-- Marker 8: Mandi -->
+  <a-entity 
+  id="marker8" mindar-image-target="targetIndex: 8" >
+</a-entity>
+
+  <!-- Marker 9: Mixed -->
+  <a-entity 
+  id="marker9" mindar-image-target="targetIndex: 9">
+</a-entity>
+
+  <!-- Marker 10: Masala -->
+  <a-entity 
+  id="marker10" mindar-image-target="targetIndex: 10">
+</a-entity>
+
+ <!-- Marker 11: Maqloobah -->
+ <a-entity 
+  id="marker11" mindar-image-target="targetIndex: 11" >
+  
+</a-entity>
+
+  <!-- Marker 12: Pastil -->
+<a-entity 
+  id="marker12" mindar-image-target="targetIndex: 12" >
+</a-entity>
+
+  <!-- Marker 13: Pita -->
+ <a-entity 
+  id="marker13" mindar-image-target="targetIndex: 13" >
+</a-entity>
+
+  <!-- Marker 14: Shaw rice -->
+  <a-entity 
+  id="marker14" mindar-image-target="targetIndex: 14" >
+</a-entity>
+  
+  <!-- Marker 15: Shawarma -->
+<a-entity 
+  id="marker15" mindar-image-target="targetIndex: 15" >
+</a-entity>
+
+  <!-- Marker 16: samosa -->
+  <a-entity 
+  id="marker16" mindar-image-target="targetIndex: 16">
+</a-entity>
+
+  <!-- Marker 17: Tikka -->
+  <a-entity 
+  id="marker17" mindar-image-target="targetIndex: 17" >
+</a-entity>
+
+  <!-- Marker 18: Veggies -->
+  <a-entity 
+  id="marker18" mindar-image-target="targetIndex: 18" >
+</a-entity>
+
+  <!-- Marker 19: Kabab-->
+  <a-entity 
+  id="marker19" mindar-image-target="targetIndex: 19">
+</a-entity>
+
+<!-- Marker20: Kabsah -->
+  <a-entity 
+  id="marker20" mindar-image-target="targetIndex: 20">
+</a-entity>
+
+<!-- Marker21: ADD-ONS -->
+  <a-entity 
+  id="marker21" mindar-image-target="targetIndex: 21">
+</a-entity>
+
+
+</a-scene>
+
+
+<script type="module">
+const contentDiv = document.getElementById('content');
+
+const markerMenu = {
+ 0: { // Sizes
+      categories: {
+        "Budget–Regular": {
+          variants: {
+            Budget: { 
+            description: "Budget size Chicken Biryani - Good for 1 ",
+              path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsA/budget_chick_bryani.glb', 
+              scale: '0.2 0.2 0.2', 
+              position: '0 0 0' 
+            },
+            Solo: { 
+              description: "Solo size Beef Kabab w/ Rice - Good for 1-2pax",
+              path: 'modelsH/solo_broasted.glb', 
+              scale: '0.2 0.2 0.2', 
+              position: '0 0 0' 
+            },
+            Regular: { 
+              description: "Regular size Mandi Chicken - Good for 2-3pax",
+              path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsE/regularmandi.glb', 
+              scale: '0.2 0.2 0.2', 
+              position: '0 0 0' 
+            }, 
+          }
+        },
+        "Medium-Jumbo": {
+          variants: {
+            Medium: { 
+              description: "Medium size Mutton Biryani - good for 3-4pax",
+              path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsD/medium_mtn_bryni.glb', 
+              scale: '0.2 0.2 0.2', 
+              position: '0 0 0' 
+            },
+            Large: { 
+              description: "Large size Kabsah Chicken - good for 4-5pax",
+              path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsC/large_kbsah.glb', 
+                scale: '0.2 0.2 0.2', 
+                position: '0 0 0' 
+              },
+              Jumbo: { 
+                description: "Jumbo sized Mixed Biryani Shrimp&Beef - good for 5-6pax",
+                path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsB/jumbo_mixed.glb', 
+                scale: '0.2 0.2 0.2', 
+                  position: '0 0 0' 
+              },     
+          }
+        },
+        "Bilao Sizes": {
+          variants: {
+            Bilao12: { 
+              description: "Bilao size12' Chicken & Mutton Biryani - good for 6-8pax",
+              path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsA/bilao12_chickmtn.glb', 
+                scale: '0.2 0.2 0.2', 
+                position: '0 0 0' 
+              },
+            Bilao14: { 
+              description: "Bilao size 14inch Chicken & Beef Kabsah - good for 8-11pax",
+              path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsA/bilao14_chickbeefkabsah.glb', 
+                scale: '0.2 0.2 0.2', 
+                position: '0 0 0' 
+              },
+          }
+        }
+      }
+    },
+
+  1: { // Biryani
+  variants: {
+    Chicken: { 
+      description: "Our Chicken Biryani is made with tender chicken pieces, basmati rice, and spices. \n\nContains: raisins, spices, egg",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsE/smallchbiryani-v1.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0' ,
+       nutrition: {
+    "Calories (kcal)": 272,
+    "Protein (g)": 18.1,
+    "Total Fat (g)": 7.7,
+    "Saturated Fat (g)": 2.7,
+    "Carbohydrates (g)": 32.6,
+    "Fiber (g)": 2.7,
+    "Sugars (g)": 4.3,
+    "Cholesterol (mg)": 154.7,
+    "Sodium (mg)": 351.8
+  }
+    },
+    Beef: { 
+      description: "Our Beef Biryani features soft beef cubes simmered with herbs and basmati rice. \n\nContains: raisins, spices, egg",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsG/smbeefbryani-v1.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0',
+      nutrition: {
+    "Calories (kcal)": 353,
+    "Protein (g)": 20.8,
+    "Total Fat (g)": 16.3,
+    "Saturated Fat (g)": 6.8,
+    "Carbohydrates (g)": 29.9,
+    "Fiber (g)": 2.5,
+    "Sugars (g)": 3.9,
+    "Cholesterol (mg)": 162.6,
+    "Sodium (mg)": 228.4
+  }
+    },
+    Mutton: { 
+      description: "Our Mutton Biryani combines juicy mutton cuts and basmati rice cooked in authentic spices.\n\nContains: raisins, spices, egg",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsG/smmtnbryani-v2.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0',
+      nutrition: {
+    "Calories (kcal)": 328,
+    "Protein (g)": 15.1,
+    "Total Fat (g)": 16,
+    "Saturated Fat (g)": 3.4,
+    "Carbohydrates (g)": 29,
+    "Fiber (g)": 1.5,
+    "Sugars (g)": 3.6,
+    "Cholesterol (mg)": 131.3,
+    "Sodium (mg)": 516.2
+    },
+    },
+    Shrimp: { 
+      description: "Our Shrimp Biryani is a seafood delight with basmati rice infused with mild spices and shrimp.\n\nContains: raisins, spices, egg",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsE/smshrimpbryani-v3.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0',
+      nutrition: {
+    "Calories (kcal)": 308,
+    "Protein (g)": 26.5,
+    "Total Fat (g)": 10.5,
+    "Saturated Fat (g)": 2.1,
+    "Carbohydrates (g)": 25.3,
+    "Fiber (g)": 2.1,
+    "Sugars (g)": 2.8,
+    "Cholesterol (mg)": 285.1,
+    "Sodium (mg)": 1071
+    },
+    },
+  }
+},
+
+
+  2: { // Broasted
+    description: "an Arab-style method of cooking chicken usually in  deep frying and it is seasoned with spices.\n\nIncludes: Khubz, hummus, fries, salatah",
+    default: { path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsA/broasted-v1.glb', scale: '0.2 0.2 0.2', position: '0 0 0' },
+    nutrition: {
+    "Calories (kcal)": 456,
+    "Protein (g)": 25.5,
+    "Total Fat (g)": 15.1,
+    "Saturated Fat (g)": 3.9,
+    "Carbohydrates (g)": 56.1,
+    "Fiber (g)": 7,
+    "Sugars (g)": 2,
+    "Cholesterol (mg)": 55.9,
+    "Sodium (mg)": 1071
+    },
+  }, 
+  3:{ // COMBO I
+    description: "Biryani Chicken with 1pc beef kabab and choose of 1 drink.",
+    default: { path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsB/comboscan.glb', scale: '0.2 0.2 0.2', position: '0 0 0' },
+    nutrition: {
+    "Calories (kcal)": 638,
+    "Protein (g)": 31.4,
+    "Total Fat (g)": 10.3,
+    "Saturated Fat (g)": 2.7,
+    "Carbohydrates (g)": 105.7,
+    "Sugars (g)": 56.2,
+    "Cholesterol (mg)": 154.7,
+    "Sodium (mg)":400
+    },
+
+  },
+   4:{ // Desserts
+    description: "A dessert that is soft and round made from milk solids , deep-fried and then soaked in a sugar syrup. It is known for it’s texture and rich sweetness",
+    default: { path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsB/gulab.glb', scale: '0.2 0.2 0.2', position: '0 0 0' },
+    nutrition: {
+    "Calories (kcal)": 216,
+    "Protein (g)": 8,
+    "Total Fat (g)": 8,
+    "Saturated Fat (g)": 5,
+    "Carbohydrates (g)": 28,
+    "Sugars (g)": 5,
+    "Cholesterol (mg)": 15,
+    "Sodium (mg)":400
+    },
+  },
+  5:{ // Drinks
+    description: "Choose a drink category.",
+    variants: {
+      "Canned Soda": { 
+      description: "provide the perfect balance to bold, spicy flavors",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsH/sodas.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0' ,
+      
+    },
+      "Shakes": { 
+      description: "soothe the heat of spicy flavors while adding a rich, sweet finish to your meal.",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsE/shakes.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0' 
+    },
+      "Lemonade": { 
+      description: "Made from freshly squeezed lemon and cucumber.",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsC/lemonade.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0' 
+    },
+    "Lassi": { 
+      description: "A traditional Yogurt-based drink from the Indian subcontinent. it is known for its  creamy texture.",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsC/lassi.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0' 
+    },
+    "Chai": { 
+      description: "It is made by brewing black tea or with milk and aromatic spices",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsA/chai2.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0' 
+    },
+
+    }
+  },
+  6:{ // Haleem
+    description: "A stew made from Lentils or daal, and can also be mixed with tender meat  simmered with aromatic spices",
+    default: { path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsB/haleem.glb', scale: '0.2 0.2 0.2', position: '0 0 0' },
+     nutrition: {
+    "Calories (kcal)": 272,
+    "Protein (g)": 18.1,
+    "Total Fat (g)": 7.7,
+    "Saturated Fat (g)": 2.7,
+    "Carbohydrates (g)": 32.6,
+    "Fiber (g)": 2.7,
+    "Sugars (g)": 4.3,
+    "Cholesterol (mg)": 154.7,
+    "Sodium (mg)": 351.8
+  }
+  },
+  7: { // Hummus
+    description: " Made from blended Chickpeas. Best partner for Khubz. Originated in the Middle East. \n\nContains: Tahini/Sesame",
+    default: { path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsB/hummus.glb', scale: '0.2 0.2 0.2', position: '0 0 0' },
+     nutrition: {
+    "Calories (kcal)": 272,
+    "Protein (g)": 18.1,
+    "Total Fat (g)": 7.7,
+    "Saturated Fat (g)": 2.7,
+    "Carbohydrates (g)": 32.6,
+    "Fiber (g)": 2.7,
+    "Sugars (g)": 4.3,
+    "Cholesterol (mg)": 154.7,
+    "Sodium (mg)": 351.8
+  }
+  },
+  8: { // Mandi
+  variants: {
+    Chicken: { 
+      description: "Chicken Mandi is oven-roasted featuring tender chicken tomato-based layered over biryani rice.",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsG/smallchmandi-v2.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0' ,
+      nutrition: {
+    "Calories (kcal)": 327,
+    "Protein (g)": 30.7,
+    "Total Fat (g)": 7.6,
+    "Saturated Fat (g)": 1.9,
+    "Carbohydrates (g)": 31.2,
+    "Sugars (g)": 3.1,
+    "Cholesterol (mg)": 78.1,
+    "Sodium (mg)":553
+    },
+    },
+    Beef: { 
+      description: "Our Beef Mandi simmered in a rich tomato-based blend roasted in the oven, paired with biryani rice.",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsE/smallbeefmandi-v5.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0',
+      nutrition: {
+    "Calories (kcal)": 245,
+    "Protein (g)": 15,
+    "Total Fat (g)": 5.5,
+    "Saturated Fat (g)": 1.4,
+    "Carbohydrates (g)": 32.2,
+    "Sugars (g)": 3.1,
+    "Cholesterol (mg)": 30.2,
+    "Sodium (mg)":940
+    },
+    },
+    Mutton: { 
+      description: "Our Mutton Mandi features mutton pieces baked with tomato-spiced oven-roasted with biryani rice.",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsG/smallmtnmandi-v3.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0',
+      nutrition: {
+    "Calories (kcal)": 245,
+    "Protein (g)": 15,
+    "Total Fat (g)": 5.5,
+    "Saturated Fat (g)": 1.4,
+    "Carbohydrates (g)": 32.2,
+    "Sugars (g)": 3.1,
+    "Cholesterol (mg)": 30.2,
+    "Sodium (mg)":940
+    },
+    },
+    Shrimp: { 
+      description: "Our Shrimp Mandi is a seafood twist, combining shrimp with tomato-based blend, lightly oven-roasted with biryani rice",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsG/smallshrimpmandi-v4.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0' ,
+      nutrition: {
+    "Calories (kcal)": 286,
+    "Protein (g)": 23.4,
+    "Total Fat (g)": 6,
+    "Saturated Fat (g)": 1.4,
+    "Carbohydrates (g)": 32.2,
+    "Sugars (g)": 3.1,
+    "Cholesterol (mg)": 184,
+    "Sodium (mg)":940
+    },
+
+    },
+  }
+},
+9:  { // Mixed
+   variants: { 
+    "Mixed Biryani": {
+      description: "Mixed Chicken and Shrimp cooked together with basmati rice and spices",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsD/mixedbiryani-v1.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0' ,
+      nutrition: {
+    "Calories (kcal)": 625,
+    "Protein (g)": 38.9,
+    "Total Fat (g)": 24,
+    "Saturated Fat (g)": 9.5,
+    "Carbohydrates (g)": 65.2,
+    "Fiber (g)": 5.2,
+    "Sugars (g)": 8.2,
+    "Cholesterol (mg)": 317.3,
+    "Sodium (mg)": 514.4
+    },
+
+    },
+    "Mixed Kabsah": {
+      description: "mixed chiken and beef topped on basmati rice , marinated with spices.",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsD/mixedkabsah-v2.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0',
+       nutrition: {
+    "Calories (kcal)": 272,
+    "Protein (g)": 18.1,
+    "Total Fat (g)": 7.7,
+    "Saturated Fat (g)": 2.7,
+    "Carbohydrates (g)": 32.6,
+    "Fiber (g)": 2.7,
+    "Sugars (g)": 4.3,
+    "Cholesterol (mg)": 154.7,
+    "Sodium (mg)": 351.8
+  }
+  
+    },
+    "Mixed Mandi": {
+      model: { path: 'modelsD/mixedmandi-v3.glb', scale: '0.2 0.2 0.2', position: '0 0 0' },
+      description: "mixed chicken and mutton with blend of tomato and biryani rice",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsD/mixedmandi-v3.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0',
+       nutrition: {
+    "Calories (kcal)": 572,
+    "Protein (g)": 45.7,
+    "Total Fat (g)": 13.1,
+    "Saturated Fat (g)": 3.3,
+    "Carbohydrates (g)": 63.4,
+    "Sugars (g)": 6.2,
+    "Cholesterol (mg)": 317.3,
+    "Sodium (mg)": 514.4
+    },
+
+    },
+  }
+},
+10: { // Masala Menu
+   variants: { 
+    "Masala": {
+      description: "Cooked with a blend of spices, onions, tomatoes, and herbs. Originated from India/Pakistan",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsD/masala.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0',
+      nutrition: {
+    "Calories (kcal)": 296,
+    "Protein (g)": 10.2,
+    "Total Fat (g)": 13.1,
+    "Saturated Fat (g)": 3.3,
+    "Carbohydrates (g)": 63.4,
+    "Sugars (g)": 6.2,
+    "Cholesterol (mg)": 317.3,
+    "Sodium (mg)": 514.4
+    },
+    },
+    "Curry": {
+      description: " A savory dish  simmered in a spiced sauce. Adapted worldwide",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsB/cutty.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0',
+      nutrition: {
+    "Calories (kcal)": 572,
+    "Protein (g)": 45.7,
+    "Total Fat (g)": 13.1,
+    "Saturated Fat (g)": 3.3,
+    "Carbohydrates (g)": 63.4,
+    "Sugars (g)": 6.2,
+    "Cholesterol (mg)": 317.3,
+    "Sodium (mg)": 514.4
+    },
+    },
+    "Nihari": {
+      model: { path: 'models/nihari.glb', scale: '0.2 0.2 0.2', position: '0 0 0' },
+      description: "Stew of tender meat in a spiced gravy with ginger and calamansi",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsD/nihari.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0',
+      nutrition: {
+    "Calories (kcal)": 572,
+    "Protein (g)": 45.7,
+    "Total Fat (g)": 13.1,
+    "Saturated Fat (g)": 3.3,
+    "Carbohydrates (g)": 63.4,
+    "Sugars (g)": 6.2,
+    "Cholesterol (mg)": 317.3,
+    "Sodium (mg)": 514.4
+    },
+    },
+    "Korma": {
+      description: "An Indian creamy dish cooked with yogurt  and mild spices",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsB/korma.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0',
+      nutrition: {
+    "Calories (kcal)": 572,
+    "Protein (g)": 45.7,
+    "Total Fat (g)": 13.1,
+    "Saturated Fat (g)": 3.3,
+    "Carbohydrates (g)": 63.4,
+    "Sugars (g)": 6.2,
+    "Cholesterol (mg)": 317.3,
+    "Sodium (mg)": 514.4
+    },
+    }
+  }
+},
+11: { // Maqloobah
+  variants: {
+    Chicken: { 
+      description: "Our Chicken Maqloobah is a traditional layered rice dish made with chicken, basmati rice, and vegetables all flipped upside down.",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsC/maqloobahch-v4.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0',
+      nutrition: {
+    "Calories (kcal)": 272,
+    "Protein (g)": 18.1,
+    "Total Fat (g)": 7.7,
+    "Saturated Fat (g)": 2.7,
+    "Carbohydrates (g)": 32.6,
+    "Fiber (g)": 2.7,
+    "Sugars (g)": 4.3,
+    "Cholesterol (mg)": 154.7,
+    "Sodium (mg)": 351.8
+  }
+    },
+    Beef: { 
+      description: "Our Beef Maqloobah features tender beef layered with rice and vegetables cooked together then flipped for a hearty meal.",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsC/maqloobahbeef-v5.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0' ,
+      nutrition: {
+    "Calories (kcal)": 272,
+    "Protein (g)": 18.1,
+    "Total Fat (g)": 7.7,
+    "Saturated Fat (g)": 2.7,
+    "Carbohydrates (g)": 32.6,
+    "Fiber (g)": 2.7,
+    "Sugars (g)": 4.3,
+    "Cholesterol (mg)": 154.7,
+    "Sodium (mg)": 351.8
+  }
+    },
+    Mutton: { 
+      description: "Our Mutton Maqloobah combines mutton with rice and layers of vegetables inverted after cooking.",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsC/maqloobahmtn-v6.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0' ,
+      nutrition: {
+    "Calories (kcal)": 272,
+    "Protein (g)": 18.1,
+    "Total Fat (g)": 7.7,
+    "Saturated Fat (g)": 2.7,
+    "Carbohydrates (g)": 32.6,
+    "Fiber (g)": 2.7,
+    "Sugars (g)": 4.3,
+    "Cholesterol (mg)": 154.7,
+    "Sodium (mg)": 351.8
+  }
+    },
+    Shrimp: { 
+      description: "Our Shrimp Maqloobah is a seafood twist made with shrimp, seasoned rice, and layered vegetables flipped upside down.",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsC/maqloobahshrimp-v7.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0' ,
+      nutrition: {
+    "Calories (kcal)": 286,
+    "Protein (g)": 23.4,
+    "Total Fat (g)": 6,
+    "Saturated Fat (g)": 1.4,
+    "Carbohydrates (g)": 32.2,
+    "Sugars (g)": 3.1,
+    "Cholesterol (mg)": 184,
+    "Sodium (mg)":940
+    },
+
+    },
+   
+  }
+},
+12: { // Pastil
+    description: "A traditional dish from Mindanao in the Philippines.It consists of steamed rice topped with shredded chicken or beef.",
+    default: { path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsE/pater.glb', scale: '0.2 0.2 0.2', position: '0 0 0' },
+     nutrition: {
+    "Calories (kcal)": 272,
+    "Protein (g)": 18.1,
+    "Total Fat (g)": 7.7,
+    "Saturated Fat (g)": 2.7,
+    "Carbohydrates (g)": 32.6,
+    "Fiber (g)": 2.7,
+    "Sugars (g)": 4.3,
+    "Cholesterol (mg)": 154.7,
+    "Sodium (mg)": 351.8
+  }
+
+  },
+13:{ // Pita
+  variants: {
+    "Chappati": {
+      description: "also known as roti made with wheat flour and can be enjoyed with various dishes",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsB/chappati.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0' ,
+      nutrition: {
+    "Calories (kcal)": 202,
+    "Protein (g)": 7.7,
+    "Total Fat (g)": 5.1,
+    "Saturated Fat (g)": 1.3,
+    "Carbohydrates (g)": 31.5,
+    "Sugars (g)": 1.8,
+    "Cholesterol (mg)": 0,
+    "Sodium (mg)":278
+    },
+    },
+    "Paratha": {
+      description: " is a flatbread native to the Indian subcontinent. It can also be layared with cheese, butter, sugar, garlic, egg.",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsD/paratha.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0' ,
+      nutrition: {
+    "Calories (kcal)": 258,
+    "Protein (g)": 5,
+    "Total Fat (g)": 10.4,
+    "Saturated Fat (g)": 4.6,
+    "Carbohydrates (g)": 35.8,
+    "Sugars (g)": 3.3,
+    "Cholesterol (mg)": 0.79,
+    "Sodium (mg)": 357
+    },
+    },
+    "Khubz": {
+      description: "a white and round pita and can be enjoyed with various dishes.",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsB/khubs.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0' ,
+      nutrition: {
+    "Calories (kcal)": 137,
+    "Protein (g)": 4.9,
+    "Total Fat (g)": 3.2,
+    "Saturated Fat (g)": 1.4,
+    "Carbohydrates (g)": 22.1,
+    "Sugars (g)": 1.6,
+    "Cholesterol (mg)": 0.44,
+    "Sodium (mg)":223.5
+    },
+    },
+  }
+},
+14:  { // Shawarma Rice
+  variants: {
+    "Beef": {
+      description: "A Filipino take on the Middle Eastern classic, featuring  shawarma-style meat  served over a yellow spiced rice and salatah.",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsF/shawricebeef-v2.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0' ,
+      nutrition: {
+    "Calories (kcal)": 861,
+    "Protein (g)": 57,
+    "Total Fat (g)": 18.5,
+    "Saturated Fat (g)": 3.5,
+    "Carbohydrates (g)": 114,
+    "Sugars (g)": 8,
+    "Cholesterol (mg)": 130.4,
+    "Sodium (mg)":614
+    },
+    },
+    "Chicken": {
+      description: "A Filipino take on the Middle Eastern classic, featuring  shawarma-style meat  served over a yellow spiced rice and salatah.",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsF/shawricechik-v1.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0' ,
+      nutrition: {
+    "Calories (kcal)": 861,
+    "Protein (g)": 57,
+    "Total Fat (g)": 18.5,
+    "Saturated Fat (g)": 3.5,
+    "Carbohydrates (g)": 114,
+    "Sugars (g)": 8,
+    "Cholesterol (mg)": 130.4,
+    "Sodium (mg)":614
+    },
+      
+    },
+  }
+},
+15:  { // Shawarma
+  variants: {
+    "with Veggies": {
+      description: " A Middle Eastern delicacy made by marinated meat on a vertical strip. It is wrapped in flatbread with vegetables inside. \n\nIncludes: Onions, Tomatoes, Cabbage, Cucumber",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsF/shawarmaveg-v10.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0',
+      nutrition: {
+    "Calories (kcal)": 719,
+    "Protein (g)": 31,
+    "Total Fat (g)": 40,
+    "Saturated Fat (g)": 8,
+    "Carbohydrates (g)": 56,
+    "Sugars (g)": 0,
+    "Cholesterol (mg)": 0,
+    "Sodium (mg)":0
+    },
+
+    },
+    "with Fries": {
+      description: "  A Middle Eastern delicacy made by marinated meat on a vertical strip. It is wrapped in flatbread with fries inside",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsE/shawarmafries-v11.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0',
+      nutrition: {
+    "Calories (kcal)": 765,
+    "Protein (g)": 31.7,
+    "Total Fat (g)": 41.5,
+    "Saturated Fat (g)": 8.3,
+    "Carbohydrates (g)": 63.8,
+    "Sugars (g)": 0.08,
+    "Cholesterol (mg)": 0,
+    "Sodium (mg)":110
+    },
+    },
+  }
+},
+16:{ // Samosa
+    description: "Known for it’s triangular shape. A fried snack filled with spiced Potatoes and Green peas and can also include minced meat and cheese.",
+    default: { path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsF/samosa2.glb', scale: '0.2 0.2 0.2', position: '0 0 0' },
+    nutrition: {
+    "Calories (kcal)": 233,
+    "Protein (g)": 3.9,
+    "Total Fat (g)": 13.1,
+    "Saturated Fat (g)": 3.3,
+    "Carbohydrates (g)": 24.9,
+    "Sugars (g)": 0.96,
+    "Cholesterol (mg)": 10.5,
+    "Sodium (mg)":291
+    },
+  },
+
+
+
+17:{ // Tikkah
+  variants: {
+    "with Khubz": {
+      description: "consists of marinated pieces of meat that are roasted & grilled, includes blend of spices served wiht pita.",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsH/tikkakhubz-v1.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0',
+      nutrition: {
+    "Calories (kcal)": 719,
+    "Protein (g)": 31,
+    "Total Fat (g)": 40,
+    "Saturated Fat (g)": 8,
+    "Carbohydrates (g)": 56,
+    "Sugars (g)": 0,
+    "Cholesterol (mg)": 0,
+    "Sodium (mg)":0
+    },
+      
+    },
+    "with Rice": {
+      description: "consists of marinated pieces of meat that are roasted & grilled served with biryani rice.",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsH/tikkarice-v2.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0',
+      nutrition: {
+    "Calories (kcal)": 861,
+    "Protein (g)": 57,
+    "Total Fat (g)": 18.5,
+    "Saturated Fat (g)": 3.5,
+    "Carbohydrates (g)": 114,
+    "Sugars (g)": 8,
+    "Cholesterol (mg)": 130.4,
+    "Sodium (mg)":614
+    },
+    },
+  }
+},
+18:   { // Veggies
+  variants: {
+    "Bhindi": {
+      description: "Okra Masala, made with okra, spices, and herbs, partnered with khubz.",
+      path:'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsA/bhindi.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0',
+      
+    },
+    "Loki Kaddo": {
+      description: "Upo Masala , blend of bottle gourd in spiced masala, partnered with khubz.",
+      path:'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsC/lokikaddo.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0'
+    },
+    "Karela": {
+      description: "Ampalaya Masala , a dish of bitter gourd in spiced masala, partnered with khubz.",
+      path:'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsB/karela.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0'
+    },
+    "Mixed Veggies": {
+      description: "mix of fresh vegetables cooked in a spiced masala, partnered with khubz.",
+      path:'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsD/mixedmasala.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0'
+    },"Vegetable Biryani": {
+      description: "basmati rice layered with mixed vegetables, herbs, and spices.",
+      path:'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsH/vegbiryani.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0'
+    ,
+     nutrition: {
+    "Calories (kcal)": 272,
+    "Protein (g)": 18.1,
+    "Total Fat (g)": 7.7,
+    "Saturated Fat (g)": 2.7,
+    "Carbohydrates (g)": 32.6,
+    "Fiber (g)": 2.7,
+    "Sugars (g)": 4.3,
+    "Cholesterol (mg)": 154.7,
+    "Sodium (mg)": 351.8
+  }
+    }
+  }
+},
+19: { // Kabab
+  variants: {
+    "with Khubz": {
+      description: "Consisting of skewered or minced meat  seasoned with spices and herbs, then grilled or roasted and served with khubz(pita).",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsB/kababkhubz-v11.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0',
+       nutrition: {
+    "Calories (kcal)": 272,
+    "Protein (g)": 18.1,
+    "Total Fat (g)": 7.7,
+    "Saturated Fat (g)": 2.7,
+    "Carbohydrates (g)": 32.6,
+    "Fiber (g)": 2.7,
+    "Sugars (g)": 4.3,
+    "Cholesterol (mg)": 154.7,
+    "Sodium (mg)": 351.8
+  }
+    },
+    "with Rice": {
+      description: "Consisting of skewered or minced meat  seasoned with spices and herbs, then grilled and served with biryani rice.",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsB/kababrice-v12.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0'
+    },
+  }
+},
+ 20: { // Kabsah
+  variants: {
+    Chicken: { 
+      description: "Our Chicken Kabsah features grilled, fried or roasted chicken served over basmati rice cooked with Arabic seasonings.",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsG/smallkabsah-v5.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0' ,
+       nutrition: {
+    "Calories (kcal)": 272,
+    "Protein (g)": 18.1,
+    "Total Fat (g)": 7.7,
+    "Saturated Fat (g)": 2.7,
+    "Carbohydrates (g)": 32.6,
+    "Fiber (g)": 2.7,
+    "Sugars (g)": 4.3,
+    "Cholesterol (mg)": 154.7,
+    "Sodium (mg)": 351.8
+  }
+    },
+    Beef: { 
+      description: "Our Beef Kabsah offers tender beef pieces paired with basmati rice, fries and Middle Eastern spices.",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsG/smbeefkabsa-v6.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0' ,
+      nutrition: {
+    "Calories (kcal)": 353,
+    "Protein (g)": 20.8,
+    "Total Fat (g)": 16.3,
+    "Saturated Fat (g)": 6.8,
+    "Carbohydrates (g)": 29.9,
+    "Fiber (g)": 2.5,
+    "Sugars (g)": 3.9,
+    "Cholesterol (mg)": 162.6,
+    "Sodium (mg)": 228.4
+  }
+    },
+    Mutton: { 
+      description: "Our Mutton Kabsah features roasted or grilled mutton layered over basmati rice cooked with authentic Kabsah spices.",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsG/smmtnkabsa-v7.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0' ,
+      utrition: {
+    "Calories (kcal)": 328,
+    "Protein (g)": 15.1,
+    "Total Fat (g)": 16,
+    "Saturated Fat (g)": 3.4,
+    "Carbohydrates (g)": 29,
+    "Fiber (g)": 1.5,
+    "Sugars (g)": 3.6,
+    "Cholesterol (mg)": 131.3,
+    "Sodium (mg)": 516.2
+    },
+    },
+    Shrimp: { 
+      description: "Our Shrimp Kabsah is a seafood version, made with lightly roasted shrimp with basmati rice.",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsH/smshrimpkabsa-v8.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0' ,
+      nutrition: {
+    "Calories (kcal)": 286,
+    "Protein (g)": 23.4,
+    "Total Fat (g)": 6,
+    "Saturated Fat (g)": 1.4,
+    "Carbohydrates (g)": 32.2,
+    "Sugars (g)": 3.1,
+    "Cholesterol (mg)": 184,
+    "Sodium (mg)":940
+    },
+    },
+  }
+},
+21: { // Add-ons
+  variants: {
+    "Biryani Rice": {
+      description: "long-grain Basmati rice with flavors of saffron, spices, and herbs",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsA/biryanirice.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0' 
+    },
+    "Raita": {
+      description: "A yogurt sauce combined with fresh vegetables.",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsD/raita.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0' 
+    },
+    "Palapa": {
+      description: " Filipino condiment made primarily from sakurab, ginger, turmeric, chili, toasted coconut. Originated from Maranao tribe.",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsD/palapa.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0' 
+    },
+     "Salatah": {
+      description: "A salad originating from the Middle East, commonly served as a side dish which typically includes fresh vegetables.",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsE/salatah.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0' 
+    },
+     "Sauces": {
+      description: "White/Garlic sauce is condiment that is  often served as a dip. Red/Hot sauce is a spicy condiment made from a blend of chili and tomatoes.",
+      path: 'https://cdn.jsdelivr.net/gh/zohra07810/WebArmenu@main/modelsE/sauces.glb', 
+      scale: '0.2 0.2 0.2', 
+      position: '0 0 0' 
+    },
+  }
+}
+};
+
+
+let currentMarker = null;
+let currentModel = null;
+let activeVariant = null;
+let variantKeys = [];
+let variantIndex = 0;
+
+const firstModelLoadedMap = new Map();
+const preloadedModels = {}; // store loaded models per marker + variant key
+
+
+function loadModel(markerEntity, modelData = null, variants = {}, variantName = null) {
+  // Clear previous model & content
+  if (currentModel) {
+    currentModel.object3D.visible = false;
+    currentModel = null;
+  }
+  contentDiv.innerHTML = '';
+
+  // If no modelData but there are variants, show variant buttons
+  if (!modelData && Object.keys(variants).length > 0) {
+  variantKeys = Object.keys(variants);
+  variantIndex = 0;
+
+  loadVariantByIndex(markerEntity, variants, variantIndex);
+  return;
+}
+
+// If modelData itself has description (single model without 'default')
+if (modelData && modelData.description) {
+
+  const descContainer = document.createElement('div');
+  descContainer.id = 'description-container';
+
+  const desc = document.createElement('p');
+  desc.id = 'description';
+  desc.textContent = modelData.description;
+
+  descContainer.appendChild(desc);
+  contentDiv.appendChild(descContainer);
+
+
+  // ---- BUTTON ROW (Back + Nutrition) ----
+  const btnRow = document.createElement('div');
+  btnRow.style.display = "flex";
+  btnRow.style.justifyContent = "center";
+  btnRow.style.gap = "10px";
+  btnRow.style.marginTop = "15px";
+
+  // Back Button
+  const backBtn = document.createElement('button');
+  backBtn.textContent = "← Back";
+  backBtn.onclick = () => {
+    const menu = markerMenu[currentMarker.dataset.index];
+    if (menu.variants) showMainVariants(markerEntity);
+  };
+
+  // Nutrition Button
+  const nutritionBtn = document.createElement('button');
+  nutritionBtn.textContent = "📊 Nutrition";
+  nutritionBtn.onclick = () => {
+    const box = document.getElementById('nutrition-container');
+    box.style.display = box.style.display === "none" ? "block" : "none";
+  };
+
+  btnRow.appendChild(backBtn);
+  btnRow.appendChild(nutritionBtn);
+  contentDiv.appendChild(btnRow);
+}
+
+
+  // --- Loader / 3D model loading ---
+  const markerKey = markerEntity.dataset.id || markerEntity;
+  const modelKey = `${markerKey}_${variantName || ''}`;
+
+  const loader = new THREE.GLTFLoader();
+  if (THREE.DRACOLoader) {
+    const draco = new THREE.DRACOLoader();
+    draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+    loader.setDRACOLoader(draco);
+  }
+
+  if (preloadedModels[modelKey]) {
+    Object.keys(preloadedModels).forEach((key) => {
+      if (key.startsWith(markerKey)) preloadedModels[key].object3D.visible = false;
+    });
+
+    preloadedModels[modelKey].object3D.visible = true;
+    currentModel = preloadedModels[modelKey];
+    contentDiv.innerHTML = '';
+    showModelDescription(modelData, variants, markerEntity);
+    window.addChangeViewButton(currentModel);
+
+  } else {
+
+    // ---- NEW CIRCULAR LOADER ----
+    const loaderWrapper = document.createElement("div");
+    loaderWrapper.style.cssText = `
+      width: 90px;
+      height: 90px;
+      margin: 15px auto;
+      position: relative;
+    `;
+
+    const baseCircle = document.createElement("div");
+    baseCircle.style.cssText = `
+      width: 100%;
+      height: 100%;
+      border: 6px solid #ccc;
+      border-radius: 50%;
+      box-sizing: border-box;
+      position: absolute;
+    `;
+
+    const progressCircle = document.createElement("div");
+    progressCircle.style.cssText = `
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      position: absolute;
+      background: conic-gradient(#4caf50 0deg, transparent 0deg);
+      transition: background 0.12s linear;
+    `;
+
+    const percentText = document.createElement("div");
+    percentText.style.cssText = `
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      text-align: center;
+    `;
+    percentText.textContent = "0%";
+
+    loaderWrapper.appendChild(baseCircle);
+    loaderWrapper.appendChild(progressCircle);
+    loaderWrapper.appendChild(percentText);
+
+    contentDiv.textContent = "Loading Model...";
+    contentDiv.appendChild(loaderWrapper);
+
+    const entity = document.createElement('a-entity');
+    entity.setAttribute('scale', modelData.scale || '0.2 0.2 0.2');
+    entity.setAttribute('position', modelData.position || '0 0 0');
+    markerEntity.appendChild(entity);
+
+    loader.load(
+      modelData.path,
+      (gltf) => {
+        entity.setObject3D('mesh', gltf.scene);
+        preloadedModels[modelKey] = entity;
+        currentModel = entity;
+
+        percentText.textContent = "100%";
+        progressCircle.style.background = `conic-gradient(#4caf50 360deg, transparent 360deg)`;
+
+        setTimeout(() => {
+          loaderWrapper.remove();
+          contentDiv.innerHTML = '';
+          showModelDescription(modelData, variants, markerEntity);
+          window.addChangeViewButton(currentModel);
+        }, 400);
+      },
+      (xhr) => {
+        if (xhr.lengthComputable) {
+          let percent = Math.min((xhr.loaded / xhr.total) * 100, 100);
+          percentText.textContent = Math.round(percent) + "%";
+          progressCircle.style.background =
+            `conic-gradient(#4caf50 ${(percent / 100) * 360}deg, transparent ${(percent / 100) * 360}deg)`;
+        }
+      },
+      (error) => {
+        console.error('Error loading model', error);
+        contentDiv.innerHTML = '❌ Failed to load 3D model';
+      }
+    );
+  }
+
+  // --- Preload other variants ---
+  if (!firstModelLoadedMap.get(markerKey)) {
+    firstModelLoadedMap.set(markerKey, true);
+
+    const modelsToPreload = [];
+    if (modelData.sizes) {
+      Object.keys(modelData.sizes).forEach((size) => {
+        const key = `${markerKey}_${size}`;
+        if (!preloadedModels[key]) {
+          modelsToPreload.push({ key, data: modelData.sizes[size] });
+        }
+      });
+    } else if (Object.keys(variants).length > 0) {
+      Object.keys(variants).forEach((vName) => {
+        const key = `${markerKey}_${vName}`;
+        if (vName !== variantName && !preloadedModels[key]) {
+          modelsToPreload.push({ key, data: variants[vName] });
+        }
+      });
+    }
+
+    modelsToPreload.forEach(({ key, data }) => {
+      const entity = document.createElement('a-entity');
+      entity.setAttribute('scale', data.scale || '0.2 0.2 0.2');
+      entity.setAttribute('position', data.position || '0 0 0');
+      entity.object3D.visible = false;
+      markerEntity.appendChild(entity);
+
+      loader.load(
+        data.path,
+        (gltf) => {
+          entity.setObject3D('mesh', gltf.scene);
+          preloadedModels[key] = entity;
+        },
+        undefined,
+        (error) => console.warn(`Background model ${key} failed to load`, error)
+      );
+    });
+  }
+}
+
+function loadVariantByIndex(markerEntity, variants, index) {
+  variantIndex = index;
+  const key = variantKeys[variantIndex];
+
+  // Load model normally
+  loadModel(markerEntity, variants[key], variants, key);
+
+  // Render arrows safely
+  const navContainer = document.getElementById('variant-nav-container');
+  navContainer.innerHTML = '';
+
+  // If only 1 variant, don't show arrows
+  if (variantKeys.length <= 1) return;
+
+  const nav = document.createElement('div');
+  nav.className = 'variant-nav';
+
+  const prev = document.createElement('button');
+  prev.className = 'variant-arrow';
+  prev.textContent = '⬅️';
+
+  const label = document.createElement('div');
+  label.className = 'variant-label';
+  label.textContent = key;
+
+  const next = document.createElement('button');
+  next.className = 'variant-arrow';
+  next.textContent = '➡️';
+
+  prev.onclick = () => {
+    const newIndex =
+      (variantIndex - 1 + variantKeys.length) % variantKeys.length;
+    loadVariantByIndex(markerEntity, variants, newIndex);
+  };
+
+  next.onclick = () => {
+    const newIndex =
+      (variantIndex + 1) % variantKeys.length;
+    loadVariantByIndex(markerEntity, variants, newIndex);
+  };
+
+  nav.appendChild(prev);
+  nav.appendChild(label);
+  nav.appendChild(next);
+  navContainer.appendChild(nav);
+}
+
+
+
+// Global function to add Change View button
+window.addChangeViewButton = function(model) {
+  if (!model) return;
+
+  const container = document.getElementById('change-view-container');
+  if (!container) return;
+  container.innerHTML = ''; // clear previous button
+
+  const viewBtn = document.createElement('button');
+  viewBtn.id = 'change-view-btn';
+  viewBtn.textContent = 'Change View';
+
+  // Style
+  viewBtn.style.position = 'relative';
+  viewBtn.style.padding = '8px 12px';
+  viewBtn.style.fontSize = '16px';
+  viewBtn.style.backgroundColor = '#FFD700';
+  viewBtn.style.color = '#000';
+  viewBtn.style.border = 'none';
+  viewBtn.style.borderRadius = '5px';
+  viewBtn.style.cursor = 'pointer';
+  viewBtn.style.zIndex = '9999';
+  viewBtn.style.pointerEvents = 'auto';
+
+  const originalPos = model.getAttribute('position') || { x: 0, y: 0, z: 0 };
+
+  // Detect marker index via MindAR
+  const targetIndex = model.parentElement.components['mindar-image-target']?.data.targetIndex;
+
+  // Define movements based on marker
+  let views;
+  if (targetIndex === 5) {
+    // Custom movements for marker5
+    views = [
+      { rotation: { x: 0, y: 0, z: 90 }, position: { x: originalPos.x, y: originalPos.y, z: originalPos.z } },
+      { rotation: { x: 0, y:0, z: 0 }, position: { x: originalPos.x, y: originalPos.y , z: originalPos.z } },
+    ];
+  } else {
+    // Default movements for all other markers
+    views = [
+      { rotation: { x: 0, y: 0, z: 0 }, position: { x: originalPos.x, y: originalPos.y, z: originalPos.z } },
+      { rotation: { x: -80, y: 0, z: 0 }, position: { x: originalPos.x, y: originalPos.y + 1, z: originalPos.z } },
+      { rotation: { x: -50, y: 0, z: 0 }, position: { x: originalPos.x, y: originalPos.y + 1, z: originalPos.z } },
+      { rotation: { x: 0, y: 0, z: 90 }, position: { x: originalPos.x, y: originalPos.y + 1, z: originalPos.z } },
+      { rotation: { x: 0, y: 0, z: 180 }, position: { x: originalPos.x, y: originalPos.y + 1, z: originalPos.z } },
+    ];
+  }
+
+  let currentViewIndex = 0;
+  viewBtn.onclick = () => {
+    currentViewIndex = (currentViewIndex + 1) % views.length;
+    const view = views[currentViewIndex];
+    model.setAttribute('rotation', view.rotation);
+    model.setAttribute('position', view.position);
+  };
+
+  container.appendChild(viewBtn);
+};
+function showModelDescription(modelData, variants, markerEntity) {
+  // Clear previous UI
+  contentDiv.innerHTML = '';
+
+  // ===== Reset variant nav position =====
+  const navContainer = document.getElementById('variant-nav-container');
+  if (navContainer) {
+    navContainer.style.bottom = '250px'; // always reset when description reloads
+  }
+
+  // ======================
+  // DESCRIPTION
+  // ======================
+  if (modelData.description) {
+    const descContainer = document.createElement('div');
+    descContainer.id = 'description-container';
+
+    const desc = document.createElement('p');
+    desc.id = 'description';
+    desc.style.whiteSpace = 'pre-line'; // keeps \n formatting
+    desc.textContent = modelData.description;
+
+    descContainer.appendChild(desc);
+    contentDiv.appendChild(descContainer);
+  }
+
+  // ======================
+  // BUTTON ROW
+  // ======================
+  const buttonRow = document.createElement('div');
+  buttonRow.style.display = 'flex';
+  buttonRow.style.justifyContent = 'center';
+  buttonRow.style.gap = '10px';
+  buttonRow.style.marginTop = '12px';
+
+  // ---- NUTRITION BUTTON ----
+  if (modelData.nutrition) {
+    const nutritionBtn = document.createElement('button');
+    nutritionBtn.textContent = '📊 Nutrition';
+    nutritionBtn.style.fontSize = '13px';
+    nutritionBtn.style.padding = '6px 12px';
+
+    let visible = false;
+    nutritionBtn.onclick = () => {
+      visible = !visible;
+      const chart = document.getElementById('nutrition-chart-container');
+
+      if (visible) {
+        showNutritionChart(modelData.nutrition);
+        if (navContainer) navContainer.style.bottom = '350px';
+      } else if (chart) {
+        chart.remove();
+        if (navContainer) navContainer.style.bottom = '250px';
+      }
+    };
+
+    buttonRow.appendChild(nutritionBtn);
+  }
+
+  if (buttonRow.children.length > 0) {
+    contentDiv.appendChild(buttonRow);
+  }
+}
+
+
+function renderVariantArrows(markerEntity, variants) {
+  const navContainer = document.getElementById('variant-nav-container');
+  navContainer.innerHTML = '';
+
+  if (!variants || Object.keys(variants).length <= 1) return;
+
+  const nav = document.createElement('div');
+  nav.className = 'variant-nav';
+  nav.style.gap = '60px';
+
+  const prev = document.createElement('button');
+  prev.className = 'variant-arrow';
+  prev.textContent = '⬅️';
+
+
+  const label = document.createElement('div');
+  label.className = 'variant-label';
+  label.textContent = variantKeys[variantIndex];
+
+  const next = document.createElement('button');
+  next.className = 'variant-arrow';
+  next.textContent = '➡️';
+ 
+
+  prev.onclick = () => {
+    variantIndex = (variantIndex - 1 + variantKeys.length) % variantKeys.length;
+    renderVariantArrows(markerEntity, variants);
+    loadVariantByIndex(markerEntity, variants, variantIndex);
+  };
+
+  next.onclick = () => {
+    variantIndex = (variantIndex + 1) % variantKeys.length;
+    renderVariantArrows(markerEntity, variants);
+    loadVariantByIndex(markerEntity, variants, variantIndex);
+  };
+
+  nav.appendChild(prev);
+  nav.appendChild(label);
+  nav.appendChild(next);
+  navContainer.appendChild(nav);
+}
+
+
+function showNutritionChart(nutritionData) {
+  // Remove previous chart
+  const oldChart = document.getElementById('nutrition-chart-container');
+  if (oldChart) oldChart.remove();
+
+  const chartContainer = document.createElement('div');
+  chartContainer.id = 'nutrition-chart-container';
+  chartContainer.style.width = "280px";
+  chartContainer.style.margin = "10px auto";
+
+  const canvas = document.createElement('canvas');
+  canvas.id = "nutrition-chart";
+  chartContainer.appendChild(canvas);
+
+  contentDiv.appendChild(chartContainer);
+
+  const ctx = canvas.getContext('2d');
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(nutritionData),
+      datasets: [{
+        label: 'Per Serving',
+        data: Object.values(nutritionData),
+        backgroundColor: 'rgba(255,255,255,0.3)',
+        borderColor: '#fff',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      maintainAspectRatio: false,
+      responsive: true,
+      plugins: {
+        legend: {
+          display: false,
+          labels: { color: "#fff" }
+        },
+        title: {
+          display: true,
+          text: "Nutrition Facts",
+          color: "#fff"
+        },
+        tooltip: {
+          titleColor: "#fff",
+          bodyColor: "#fff",
+          backgroundColor: "rgba(0,0,0,0.7)",
+          borderColor: "#fff",
+          borderWidth: 1
+        }
+      },
+      scales: {
+        x: { ticks: { color: "#fff" }, grid: { color: "rgba(255,255,255,0.2)" } },
+        y: { ticks: { color: "#fff" }, grid: { color: "rgba(255,255,255,0.2)" } }
+      }
+    }
+  });
+}
+
+// ----------------------------
+// Show main variants
+// ----------------------------
+function showMainVariants(markerEntity) {
+  contentDiv.innerHTML = '';
+  const mainVariants = markerMenu[currentMarker.dataset.index].variants;
+
+  const title = document.createElement('h3');
+  title.textContent = 'Select Category:';
+  contentDiv.appendChild(title);
+
+  Object.keys(mainVariants).forEach(name => {
+    const btn = document.createElement('button');
+    btn.textContent = name;
+    btn.onclick = () => loadModel(markerEntity, mainVariants[name], mainVariants, name);
+    contentDiv.appendChild(btn);
+  });
+}
+
+
+
+
+function disableScroll() {
+  document.body.style.overflow = 'hidden';
+  document.addEventListener('touchmove', preventDefault, { passive: false });
+  document.addEventListener('wheel', preventDefault, { passive: false });
+}
+
+function enableScroll() {
+  document.body.style.overflow = '';
+  document.removeEventListener('touchmove', preventDefault, { passive: false });
+  document.removeEventListener('wheel', preventDefault, { passive: false });
+}
+
+function preventDefault(e) {
+  e.preventDefault();
+}
+
+disableScroll();
+
+
+
+function showDescription(text) {
+  const descDiv = document.getElementById('description');
+  if(descDiv) descDiv.textContent = text;
+}
+
+function clearActiveButtons() {
+  document.querySelectorAll('#content button').forEach(b => b.classList.remove('active'));
+}
+
+document.querySelectorAll('[mindar-image-target]').forEach((marker, index) => {
+  marker.dataset.index = index;
+
+
+marker.addEventListener('targetFound', async () => {
+  currentMarker = marker;
+  const menu = markerMenu[index];
+  if (!menu) return;
+
+  contentDiv.innerHTML = ''; // Clear previous content
+
+  // Special logic for marker 0 (Sizes) if needed
+  if (index === 0) {
+    try {
+      const module = await import('./sizes.js');
+      module.loadSizesMarker(marker, contentDiv, markerMenu);
+    } catch (err) {
+      console.error('Failed to load sizes module:', err);
+    }
+    return;
+  }
+
+  // Marker has variants
+  if (menu.variants && Object.keys(menu.variants).length > 0) {
+    loadModel(marker, null, menu.variants);
+    return;
+  }
+
+  // Marker is a default-only dish
+  if (menu.default) {
+    try {
+      const defaultModule = await import('./default.js');
+      // Call the function from defaultMarkers.js
+      defaultModule.loadDefaultMarker(marker, contentDiv, menu);
+    } catch (err) {
+      console.error('Failed to load default markers module:', err);
+    }
+    return;
+  }
+});
+
+// ===== TARGET LOST =====
+marker.addEventListener('targetLost', () => {
+  const markerKey = currentMarker?.dataset.id || marker;
+
+  // --- Remove current model completely ---
+  if (currentModel) {
+    if (currentModel.parentElement) currentModel.parentElement.removeChild(currentModel);
+    delete preloadedModels[currentModel.dataset.key];
+    currentModel = null;
+  }
+
+  // --- Remove all other preloaded models for this marker ---
+  Object.keys(preloadedModels).forEach((key) => {
+    if (key.startsWith(markerKey)) {
+      const entity = preloadedModels[key];
+      if (entity.parentElement) entity.parentElement.removeChild(entity);
+      delete preloadedModels[key];
+    }
+  });
+
+  // --- Reset flags & content ---
+  firstModelLoadedMap.delete(markerKey);
+  contentDiv.innerHTML = 'Scan the Menu';
+});
+
+
+});
+
+// Help Modal Slideshow Logic
+const modal = document.getElementById('helpModal');
+const helpBtn = document.getElementById('helpBtn');
+const closeModal = document.querySelector('.close');
+const slides = document.querySelectorAll('.slide');
+const nextBtn = document.getElementById('nextBtn');
+const prevBtn = document.getElementById('prevBtn');
+let currentSlide = 0;
+
+helpBtn.addEventListener('click', () => {
+  modal.style.display = 'block';
+  showSlide(currentSlide);
+});
+
+closeModal.addEventListener('click', () => {
+  modal.style.display = 'none';
+});
+
+window.addEventListener('click', (event) => {
+  if (event.target === modal) {
+    modal.style.display = 'none';
+  }
+});
+
+nextBtn.addEventListener('click', () => {
+  currentSlide = (currentSlide + 1) % slides.length;
+  showSlide(currentSlide);
+});
+
+prevBtn.addEventListener('click', () => {
+  currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+  showSlide(currentSlide);
+});
+
+function showSlide(index) {
+  slides.forEach((slide, i) => {
+    slide.classList.toggle('active', i === index);
+  });
+}
+
+// ✅ Hide the initial modal only on desktop
+window.addEventListener('load', () => {
+  const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+  const helpModal = document.getElementById('helpModal');
+
+  if (!isMobile) {
+    // Desktop → hide initial modal
+    helpModal.style.display = 'none';
+  }
+});
+
+
+</script>
+
+
+<script>
+  const loadedMarkers = new Set(); 
+
+  window.addEventListener("load", () => {
+    Object.keys(markerMenu).forEach(index => {
+      const markerData = markerMenu[index];
+      const markerEntity = document.getElementById(`marker${index}`);
+      if (!markerEntity) return;
+
+      // When marker is first detected
+      markerEntity.addEventListener("targetFound", () => {
+        if (loadedMarkers.has(index)) return; 
+        loadedMarkers.add(index);
+
+        console.log(`📦 Loading first model for marker ${index}...`);
+
+        // Create <a-assets> if not present
+        let assetsContainer = document.getElementById("marker-assets");
+        if (!assetsContainer) {
+          assetsContainer = document.createElement("a-assets");
+          assetsContainer.id = "marker-assets";
+          document.querySelector("a-scene").appendChild(assetsContainer);
+        }
+
+        // Helper for model preloading
+        const preloadModel = (path) => {
+          if (!path) return;
+          const assetId = `model-${index}-${path.replace(/[^\w]/g, "")}`;
+          if (!document.getElementById(assetId)) {
+            const assetItem = document.createElement("a-asset-item");
+            assetItem.setAttribute("id", assetId);
+            assetItem.setAttribute("src", path);
+            assetsContainer.appendChild(assetItem);
+          }
+        };
+
+        // STEP 1️⃣: Load the main (visible) model immediately
+        if (markerData.default && markerData.default.path) {
+          preloadModel(markerData.default.path);
+        }
+
+        // STEP 2️⃣: Wait a short delay to preload others quietly
+        setTimeout(() => {
+          console.log(`⚙️ Preloading background models for marker ${index}...`);
+
+          // Preload models from "options"
+          if (markerData.options) {
+            Object.values(markerData.options).forEach(opt => {
+              if (opt.model && opt.model.path) preloadModel(opt.model.path);
+            });
+          }
+
+          // Preload from "variants" and "sizes"
+          if (markerData.variants) {
+            Object.values(markerData.variants).forEach(variant => {
+              if (variant.path) preloadModel(variant.path);
+              if (variant.sizes) {
+                Object.values(variant.sizes).forEach(size => preloadModel(size.path));
+              }
+            });
+          }
+
+          // Preload from "categories"
+          if (markerData.categories) {
+            Object.values(markerData.categories).forEach(cat => {
+              if (cat.Glass && cat.Glass.path) preloadModel(cat.Glass.path);
+            });
+          }
+
+          console.log(`✅ Background models for marker ${index} are now cached.`);
+        }, 1000); 
+      });
+    });
+  });
+</script>
+
+<script>
+
+
+function refreshScene() {
+  const scene = document.querySelector('a-scene');
+  
+  // Option 1: Soft reload (restarts MindAR tracking only)
+  if (scene && scene.systems['mindar-image']) {
+    scene.systems['mindar-image'].stop();
+    setTimeout(() => {
+      scene.systems['mindar-image'].start();
+      alert('Scene refreshed! Try scanning again.');
+    }, 500);
+  } else {
+    // Option 2: Hard reload if something went wrong
+    location.reload();
+  }
+}
+</script>
+
+
+
+</body>
+</html>
+
